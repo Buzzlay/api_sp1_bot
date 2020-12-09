@@ -38,7 +38,10 @@ def parse_homework_status(homework):
     status = homework['status']
     if status in REACTIONS:
         reaction = REACTIONS[status]
-        return BOT_ANSWER.format(args=[name, reaction])
+        return BOT_ANSWER.format(
+            name=name,
+            reaction=reaction
+        )
     raise MY_WARNING.format(status=status)
 
 
