@@ -3,6 +3,7 @@ import os
 import time
 
 import requests
+from requests.exceptions import HTTPError
 import telegram
 from dotenv import load_dotenv
 
@@ -29,42 +30,54 @@ CONNECTION_ERROR = ('Ошибка при отправке запроса: {error
                     'headers = {headers}\n'
                     'params = {params}\n')
 PROCESSING_ERROR = ('Возникла ошибка при обработке запроса сервером,\n'
-                    'Текст ошибки: "{error}"')
+                    'Текст ошибки: "{error}"\n'
+                    'URL запроса: {url}\n'
+                    'Код ответа: {status_code}\n'
+                    'Параметры запроса:\n'
+                    'headers = {headers}\n'
+                    'params = {params}\n')
 logger = logging.getLogger('myLogger')
 
 
 def parse_homework_status(homework):
     name = homework.get('homework_name')
     status = homework['status']
-    if status in REACTIONS:
-        reaction = REACTIONS[status]
-        return BOT_ANSWER.format(
-            name=name,
-            reaction=reaction
-        )
-    raise MY_WARNING.format(status=status)
+    if status not in REACTIONS:
+        raise ValueError(MY_WARNING.format(status=status))
+    reaction = REACTIONS[status]
+    return BOT_ANSWER.format(
+        name=name,
+        reaction=reaction
+    )
 
 
 def get_homework_statuses(current_timestamp):
     params = {'from_date': current_timestamp}
     try:
         response = requests.get(
-            PRAKTIKUM_URL,
+            url=PRAKTIKUM_URL,
             headers=HEADERS,
             params=params
         )
     except requests.exceptions.RequestException as error:
         raise ConnectionError(CONNECTION_ERROR.format(
-            error,
-            PRAKTIKUM_URL,
-            HEADERS,
-            params
+            error=error,
+            url=PRAKTIKUM_URL,
+            headers=HEADERS,
+            params=params
         ))
-    else:
-        if 'error' in response.json():
-            raise IOError(PROCESSING_ERROR.format(error=response.json()['error']))
-        else:
-            return response.json()
+    response_data = response.json()
+    error_keys = ['error', 'code']
+    for item in error_keys:
+        if item in response_data:
+            raise HTTPError(PROCESSING_ERROR.format(
+                error=response_data[item],
+                url=PRAKTIKUM_URL,
+                status_code=response.status_code,
+                headers=HEADERS,
+                params=params
+            ))
+    return response_data
 
 
 def send_message(message, bot_client=None):
