@@ -23,7 +23,8 @@ MY_WARNING = 'Произошла ошибка при запросе через A
              'неожиданный статус домашнего задания: "{status}"'
 BOT_ERROR_TEXT = 'Бот столкнулся с ошибкой: {exception}'
 BOT_ANSWER = 'У вас проверили работу "{name}"!\n' \
-             '\n{reaction}'
+             '\n{reaction}\n' \
+             'Комментарий ревьюера: {comment}'
 CONNECTION_ERROR = ('Ошибка при отправке запроса: {error}\n'
                     'URL запроса: {url}\n'
                     'Параметры запроса:\n'
@@ -42,12 +43,14 @@ logger = logging.getLogger('myLogger')
 def parse_homework_status(homework):
     name = homework.get('homework_name')
     status = homework['status']
+    comment = homework['reviewer_comment']
     if status not in REACTIONS:
         raise ValueError(MY_WARNING.format(status=status))
     reaction = REACTIONS[status]
     return BOT_ANSWER.format(
         name=name,
-        reaction=reaction
+        reaction=reaction,
+        comment=comment
     )
 
 
