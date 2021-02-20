@@ -20,12 +20,15 @@ REACTIONS = {
                 'можно приступать к следующему уроку.',
     'reviewing': 'Ревьюер начал проверять работу'
 }
+BOT_UP = 'Бот запущен'
 MY_WARNING = 'Произошла ошибка при запросе через API, ' \
              'неожиданный статус домашнего задания: "{status}"'
 BOT_ERROR_TEXT = 'Бот столкнулся с ошибкой: {exception}'
-BOT_ANSWER = 'У вас проверили работу "{name}"!\n' \
+BOT_ANSWER_FINISH = 'У вас проверили работу "{name}"!\n' \
              '\n{reaction}\n' \
              'Комментарий ревьюера: {comment}'
+BOT_ANSWER_PROGRESS = '{reaction}\n' \
+                      '"{name}"'
 CONNECTION_ERROR = ('Ошибка при отправке запроса: {error}\n'
                     'URL запроса: {url}\n'
                     'Параметры запроса:\n'
@@ -48,11 +51,17 @@ def parse_homework_status(homework):
     if status not in REACTIONS:
         raise ValueError(MY_WARNING.format(status=status))
     reaction = REACTIONS[status]
-    return BOT_ANSWER.format(
-        name=name,
-        reaction=reaction,
-        comment=comment
-    )
+    if status != 'reviewing':
+        return BOT_ANSWER_FINISH.format(
+            name=name,
+            reaction=reaction,
+            comment=comment
+        )
+    else:
+        return BOT_ANSWER_PROGRESS.format(
+            reaction=reaction,
+            name=name
+        )
 
 
 def get_homework_statuses(current_timestamp):
@@ -93,6 +102,7 @@ def send_message(message, bot_client=None):
 
 def main():
     current_timestamp = int(time.time())
+    send_message(BOT_UP)
     while True:
         try:
             new_homework = get_homework_statuses(current_timestamp)
