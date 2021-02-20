@@ -113,7 +113,7 @@ def main():
                 'current_date',
                 current_timestamp
             )
-            time.sleep(1200)
+            time.sleep(300)
         except Exception as exception:
             logger.error(BOT_ERROR_TEXT.format(exception=exception))
             time.sleep(5)
